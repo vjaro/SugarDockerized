@@ -7,11 +7,20 @@
 REPO="$( dirname ${BASH_SOURCE[0]} )/../"
 cd $REPO
 
+STACK='sugar-web1'
+PROJECT_CONTAINERS_CONF=data/project/containers.conf
+if [ -f "$PROJECT_CONTAINERS_CONF" ]; then
+    PROJECT_STACK=$(cat "$PROJECT_CONTAINERS_CONF" | grep web1)
+    if [ ! -z  "$PROJECT_STACK" ]; then
+      STACK="$PROJECT_STACK"
+    fi
+fi
+
 # if it is our repo, and the source exists, and the destination does not
 if [ -f '.gitignore' ] && [ -d 'data' ]
 then
     # check if the stack is running
-    running=`docker ps | grep sugar-web1 | wc -l`
+    running=`docker ps | grep "$STACK" | wc -l`
 
     if [ $running -gt 0 ]
     then
