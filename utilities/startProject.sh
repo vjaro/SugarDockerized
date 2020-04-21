@@ -24,13 +24,13 @@ if [ -f "$PROJECT_CONTAINERS_CONF" ]; then
 
   echo "Restarting the project containers..."
   echo "-----------------------------------------------------------------------"
-  docker-compose -f $TRAEFIK_COMPOSE_FILE -p $PROJECT_NAME restart
+  docker-compose -f $BASE_FILE -f $PROJECT_COMPOSE_FILE -p $PROJECT_NAME restart
 
 else
   if [ -f "$PROJECT_CONF" ]; then
     source $PROJECT_CONF
 
-    if [ -f "$STACK_FILE" ]; then
+    if [ -f "$BASE_FILE" ]; then
       echo "Starting Traefikv2 service.."
       ./utilities/reverseproxy/startTraefikService.sh
       echo "-----------------------------------------------------------------------"
@@ -49,25 +49,24 @@ else
         echo "Ports $WEB_SERVER_PORT and $DB_SERVER_PORT is available..."
         echo ""
 
-        STACK_DIR="$(dirname "$STACK_FILE")"
-        STACK_FILENAME=$(basename "$STACK_FILE" .template.yml)
-        TRAEFIK_COMPOSE_FILE="$STACK_DIR/$STACK_FILENAME.yml"
+        PROJECT_COMPOSE_FILE_TEMPLATE="data/project/project-stack.template.yml"
+        PROJECT_COMPOSE_FILE="data/project/project-stack.yml"
 
-        echo "Creating traefik compose file $TRAEFIK_COMPOSE_FILE based on template..."
-        cp $STACK_FILE $TRAEFIK_COMPOSE_FILE
+        echo "Creating project compose file $PROJECT_COMPOSE_FILE based on template..."
+        cp $PROJECT_COMPOSE_FILE_TEMPLATE $PROJECT_COMPOSE_FILE
 
-        echo "Updating traefik compose file $TRAEFIK_COMPOSE_FILE based on project.conf values..."
+        echo "Updating traefik compose file $PROJECT_COMPOSE_FILE based on project.conf values..."
         sed -i -e "s/{PROJECT_NAME}/$PROJECT_NAME/" \
           -i -e "s/{WEB_SERVER_PORT}/$WEB_SERVER_PORT/" \
           -i -e "s/{DB_SERVER_PORT}/$DB_SERVER_PORT/" \
-          -i -e "s/{PROJECT_HOST_NAME}/$PROJECT_HOST_NAME/" ${TRAEFIK_COMPOSE_FILE}
+          -i -e "s/{PROJECT_HOST_NAME}/$PROJECT_HOST_NAME/" ${PROJECT_COMPOSE_FILE}
 
-        echo "TRAEFIK_COMPOSE_FILE=$TRAEFIK_COMPOSE_FILE" >>$PROJECT_CONF
+        echo "PROJECT_COMPOSE_FILE=$PROJECT_COMPOSE_FILE" >>$PROJECT_CONF
 
         echo "-----------------------------------------------------------------"
         echo ""
-        echo "Creating project '$PROJECT_NAME' based on stack file $TRAEFIK_COMPOSE_FILE ..."
-        docker-compose -f $TRAEFIK_COMPOSE_FILE -p $PROJECT_NAME up -d
+        echo "Creating project '$PROJECT_NAME' based on stack file $PROJECT_COMPOSE_FILE ..."
+        docker-compose -f $BASE_FILE -f $PROJECT_COMPOSE_FILE -p $PROJECT_NAME up -d
         echo ""
         echo "Storing project container names..."
         docker ps -a -f name=$PROJECT_NAME --format {{.Names}} >$PROJECT_CONTAINERS_CONF
@@ -94,7 +93,7 @@ else
         echo "Some ports are already being used by other process. Check output for details..."
       fi
     else
-      echo "$STACK_FILE does not exist. Exiting.."
+      echo "$BASE_FILE does not exist. Exiting.."
     fi
   else
     echo "$PROJECT_CONF does not exist. Create the file based on the data/project/project.conf"

@@ -20,7 +20,7 @@ echo "Stopping services for project $PROJECT_NAME..."
 CID=$(docker ps -aq -f name=$PROJECT_NAME)
 if [ "$CID" ]; then
   echo "--------------------------------------------------"
-  docker-compose -f $TRAEFIK_COMPOSE_FILE -p $PROJECT_NAME down
+  docker-compose -f $BASE_FILE -f $PROJECT_COMPOSE_FILE -p $PROJECT_NAME down
   echo "--------------------------------------------------"
 
   echo ""
